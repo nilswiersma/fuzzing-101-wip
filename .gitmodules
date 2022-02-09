@@ -1,0 +1,3 @@
+[submodule "Fuzzing101"]
+	path = Fuzzing101
+	url = https://github.com/antonio-morales/Fuzzing101.git
