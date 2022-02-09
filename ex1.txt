@@ -1,0 +1,18 @@
+stack trace
+    [#0] 0x7ffff7b14031 → _int_malloc(av=0x7ffff7c64b80 <main_arena>, bytes=0x158)
+    [#1] 0x7ffff7b162d4 → __GI___libc_malloc(bytes=0x158)
+    [#2] 0x7ffff7e7fb39 → operator new(unsigned long)()
+    [#3] 0x5555555e25a3 → FileStream::makeSubStream(this=0x555555691c00, startA=0x30d, limitedA=0x0, lengthA=0x0, dictA=0x7fffff7ff110)
+    [#4] 0x5555555f6b10 → XRef::fetch(this=0x555555693230, num=0x7, gen=0x0, obj=0x7fffff7ff1c0)
+    [#5] 0x5555555dfa3f → Object::dictLookup(this=0x7fffff7ff380, obj=0x7fffff7ff1c0, key=0x55555560a1c6 "Length")
+    [#6] 0x5555555dfa3f → Parser::makeStream(this=0x555556cebc80, dict=0x7fffff7ff380, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x7, objGen=0x0)
+    [#7] 0x5555555dffc8 → Parser::getObj(this=0x555556cebc80, obj=0x7fffff7ff380, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x7, objGen=<optimized out>)
+    [#8] 0x5555555f6cc8 → XRef::fetch(this=0x555555693230, num=0x7, gen=0x0, obj=0x7fffff7ff380)
+    [#9] 0x5555555dfa3f → Object::dictLookup(this=0x7fffff7ff540, obj=0x7fffff7ff380, key=0x55555560a1c6 "Length")
+
+
+b *0x5555555e25a3
+
+[#0] 0x5555555e25a3 → FileStream::makeSubStream(this=0x555555691c00, startA=0x92, limitedA=0x0, lengthA=0x0, dictA=0x7fffffffdc20)
+
+
