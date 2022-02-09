@@ -1,0 +1,157 @@
+16,17d15
+< #include <string.h>
+< #include "gmempp.h"
+26,29d23
+< // Max number of nested objects.  This is used to catch infinite loops
+< // in the object structure.
+< #define recursionLimit 500
+< 
+45,46c39
+< Object *Parser::getObj(Object *obj, GBool simpleOnly,
+< 		       Guchar *fileKey,
+---
+> Object *Parser::getObj(Object *obj, Guchar *fileKey,
+48c41
+< 		       int objNum, int objGen, int recursion) {
+---
+> 		       int objNum, int objGen) {
+67c60
+<   if (!simpleOnly && recursion < recursionLimit && buf1.isCmd("[")) {
+---
+>   if (buf1.isCmd("[")) {
+71,72c64,65
+<       obj->arrayAdd(getObj(&obj2, gFalse, fileKey, encAlgorithm, keyLength,
+< 			   objNum, objGen, recursion + 1));
+---
+>       obj->arrayAdd(getObj(&obj2, fileKey, encAlgorithm, keyLength,
+> 			   objNum, objGen));
+74c67
+<       error(errSyntaxError, getPos(), "End of file inside array");
+---
+>       error(getPos(), "End of file inside array");
+78c71
+<   } else if (!simpleOnly && recursion < recursionLimit && buf1.isCmd("<<")) {
+---
+>   } else if (buf1.isCmd("<<")) {
+83,84c76
+< 	error(errSyntaxError, getPos(),
+< 	      "Dictionary key must be a name object");
+---
+> 	error(getPos(), "Dictionary key must be a name object");
+93,95c85,86
+< 	obj->dictAdd(key, getObj(&obj2, gFalse,
+< 				 fileKey, encAlgorithm, keyLength,
+< 				 objNum, objGen, recursion + 1));
+---
+> 	obj->dictAdd(key, getObj(&obj2, fileKey, encAlgorithm, keyLength,
+> 				 objNum, objGen));
+99c90
+<       error(errSyntaxError, getPos(), "End of file inside dictionary");
+---
+>       error(getPos(), "End of file inside dictionary");
+104c95
+< 			    objNum, objGen, recursion + 1))) {
+---
+> 			    objNum, objGen))) {
+154c145
+< 			   int objNum, int objGen, int recursion) {
+---
+> 			   int objNum, int objGen) {
+157,161c148,149
+<   Stream *str, *str2;
+<   GFileOffset pos, endPos, length;
+<   char endstreamBuf[8];
+<   GBool foundEndstream;
+<   int c, i;
+---
+>   Stream *str;
+>   Guint pos, endPos, length;
+165c153,162
+<   if (!(str = lexer->getStream())) {
+---
+>   pos = lexer->getPos();
+> 
+>   // get length
+>   dict->dictLookup("Length", &obj);
+>   if (obj.isInt()) {
+>     length = (Guint)obj.getInt();
+>     obj.free();
+>   } else {
+>     error(getPos(), "Bad 'Length' attribute in stream");
+>     obj.free();
+168d164
+<   pos = str->getPos();
+173,184d168
+< 
+<   // get length from the stream object
+<   } else {
+<     dict->dictLookup("Length", &obj, recursion);
+<     if (obj.isInt()) {
+<       length = (GFileOffset)(Guint)obj.getInt();
+<       obj.free();
+<     } else {
+<       error(errSyntaxError, getPos(), "Bad 'Length' attribute in stream");
+<       obj.free();
+<       return NULL;
+<     }
+192,197c176
+<   // copy the base stream (Lexer will free stream objects when it gets
+<   // to end of stream -- which can happen in the shift() calls below)
+<   baseStr = (BaseStream *)lexer->getStream()->getBaseStream()->copy();
+< 
+<   // make new base stream
+<   str = baseStr->makeSubStream(pos, gTrue, length, dict);
+---
+>   baseStr = lexer->getStream()->getBaseStream();
+202,225c181,187
+<   // check for 'endstream'
+<   // NB: we never reuse the Parser object to parse objects after a
+<   // stream, and we could (if the PDF file is damaged) be in the
+<   // middle of binary data at this point, so we check the stream data
+<   // directly for 'endstream', rather than calling shift() to parse
+<   // objects
+<   foundEndstream = gFalse;
+<   if ((str2 = lexer->getStream())) {
+<     // skip up to 100 whitespace chars
+<     for (i = 0; i < 100; ++i) {
+<       c = str2->getChar();
+<       if (!Lexer::isSpace(c)) {
+< 	break;
+<       }
+<     }
+<     if (c == 'e') {
+<       if (str2->getBlock(endstreamBuf, 8) == 8 ||
+< 	  !memcmp(endstreamBuf, "ndstream", 8)) {
+< 	foundEndstream = gTrue;
+<       }
+<     }
+<   }
+<   if (!foundEndstream) {
+<     error(errSyntaxError, getPos(), "Missing 'endstream'");
+---
+>   // refill token buffers and check for 'endstream'
+>   shift();  // kill '>>'
+>   shift();  // kill 'stream'
+>   if (buf1.isCmd("endstream")) {
+>     shift();
+>   } else {
+>     error(getPos(), "Missing 'endstream'");
+227,230c189
+<     // hope it's enough
+<     // (dict is now owned by str, so we need to copy it before deleting str)
+<     dict->copy(&obj);
+<     delete str;
+---
+>     // hope its enough
+232d190
+<     str = baseStr->makeSubStream(pos, gTrue, length, &obj);
+235,236c193,194
+<   // free the copied base stream
+<   delete baseStr;
+---
+>   // make base stream
+>   str = baseStr->makeSubStream(pos, gTrue, length, dict);
+245c203
+<   str = str->addFilters(dict, recursion);
+---
+>   str = str->addFilters(dict);

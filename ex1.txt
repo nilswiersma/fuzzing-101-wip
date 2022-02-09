@@ -1,18 +1,77 @@
-stack trace
-    [#0] 0x7ffff7b14031 → _int_malloc(av=0x7ffff7c64b80 <main_arena>, bytes=0x158)
-    [#1] 0x7ffff7b162d4 → __GI___libc_malloc(bytes=0x158)
-    [#2] 0x7ffff7e7fb39 → operator new(unsigned long)()
-    [#3] 0x5555555e25a3 → FileStream::makeSubStream(this=0x555555691c00, startA=0x30d, limitedA=0x0, lengthA=0x0, dictA=0x7fffff7ff110)
-    [#4] 0x5555555f6b10 → XRef::fetch(this=0x555555693230, num=0x7, gen=0x0, obj=0x7fffff7ff1c0)
-    [#5] 0x5555555dfa3f → Object::dictLookup(this=0x7fffff7ff380, obj=0x7fffff7ff1c0, key=0x55555560a1c6 "Length")
-    [#6] 0x5555555dfa3f → Parser::makeStream(this=0x555556cebc80, dict=0x7fffff7ff380, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x7, objGen=0x0)
-    [#7] 0x5555555dffc8 → Parser::getObj(this=0x555556cebc80, obj=0x7fffff7ff380, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x7, objGen=<optimized out>)
-    [#8] 0x5555555f6cc8 → XRef::fetch(this=0x555555693230, num=0x7, gen=0x0, obj=0x7fffff7ff380)
-    [#9] 0x5555555dfa3f → Object::dictLookup(this=0x7fffff7ff540, obj=0x7fffff7ff380, key=0x55555560a1c6 "Length")
+crash000001
+
+#0  0x00007ffff7b11fce in _int_malloc (av=av@entry=0x7ffff7c62b80 <main_arena>, bytes=bytes@entry=0x7) at malloc.c:3679
+#1  0x00007ffff7b142d4 in __GI___libc_malloc (bytes=0x7) at malloc.c:3058
+#2  0x00000000004dd951 in gmalloc (size=0x20) at gmem.cc:97
+#3  copyString (s=0x20a4974 "Filter") at gmem.cc:261
+#4  0x0000000000493fa0 in Lexer::getObj (this=0x20a4950, obj=0x20a4928) at ./Object.h:93
+#5  0x000000000049de4a in Parser::shift (this=0x20a4900) at Parser.cc:226
+#6  Parser::getObj (this=0x20a4900, this@entry=0x20a4918, obj=obj@entry=0x7fffff7ff190, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:111
+#7  0x000000000049e2b7 in Parser::getObj (this=<optimized out>, obj=0x7fffff7ff2a0, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:85
+#8  0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffff7ff2a0) at XRef.cc:823
+#9  0x000000000049e955 in Object::dictLookup (this=0x7fffff7ff430, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffff7ff2a0) at ./Object.h:253
+#10 Parser::makeStream (this=this@entry=0x20a4420, dict=dict@entry=0x7fffff7ff430, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#11 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffff7ff430, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#12 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffff7ff430) at XRef.cc:823
+#13 0x000000000049e955 in Object::dictLookup (this=0x7fffff7ff5c0, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffff7ff430) at ./Object.h:253
+#14 Parser::makeStream (this=this@entry=0x20a3f40, dict=dict@entry=0x7fffff7ff5c0, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#15 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffff7ff5c0, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#16 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffff7ff5c0) at XRef.cc:823
+#17 0x000000000049e955 in Object::dictLookup (this=0x7fffff7ff750, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffff7ff5c0) at ./Object.h:253
+#18 Parser::makeStream (this=this@entry=0x20a3a60, dict=dict@entry=0x7fffff7ff750, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#19 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffff7ff750, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#20 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffff7ff750) at XRef.cc:823
+#21 0x000000000049e955 in Object::dictLookup (this=0x7fffff7ff8e0, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffff7ff750) at ./Object.h:253
+#22 Parser::makeStream (this=this@entry=0x20a3580, dict=dict@entry=0x7fffff7ff8e0, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+...
+#83822 Parser::makeStream (this=this@entry=0x7a4240, dict=dict@entry=0x7fffffffd740, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#83823 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffffffd740, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#83824 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffffffd740) at XRef.cc:823
+#83825 0x000000000049e955 in Object::dictLookup (this=0x7fffffffd8d0, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffffffd740) at ./Object.h:253
+#83826 Parser::makeStream (this=this@entry=0x7a3d60, dict=dict@entry=0x7fffffffd8d0, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#83827 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffffffd8d0, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#83828 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffffffd8d0) at XRef.cc:823
+#83829 0x000000000049e955 in Object::dictLookup (this=0x7fffffffda60, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffffffd8d0) at ./Object.h:253
+#83830 Parser::makeStream (this=this@entry=0x7a38a0, dict=dict@entry=0x7fffffffda60, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x8, objGen=0x0) at Parser.cc:156
+#83831 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffffffda60, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x8, objGen=0x0) at Parser.cc:94
+#83832 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x8, gen=0x0, obj=0x7fffffffda60) at XRef.cc:823
+#83833 0x000000000049e955 in Object::dictLookup (this=0x7fffffffdbd0, key=0x7ffff7c62b80 <main_arena> "", obj=0x7fffffffda60) at ./Object.h:253
+#83834 Parser::makeStream (this=this@entry=0x7a1f10, dict=dict@entry=0x7fffffffdbd0, fileKey=fileKey@entry=0x0, encAlgorithm=encAlgorithm@entry=cryptRC4, keyLength=keyLength@entry=0x0, objNum=objNum@entry=0x7, objGen=0x0) at Parser.cc:156
+#83835 0x000000000049e439 in Parser::getObj (this=<optimized out>, obj=0x7fffffffdbd0, fileKey=0x0, encAlgorithm=cryptRC4, keyLength=0x0, objNum=0x7, objGen=0x0) at Parser.cc:94
+#83836 0x00000000004d072b in XRef::fetch (this=0x7935b0, num=0x7, gen=0x0, obj=0x7fffffffdbd0) at XRef.cc:823
+#83837 0x000000000049c7a6 in Page::displaySlice (this=0x7a0980, out=<optimized out>, hDPI=<optimized out>, vDPI=<optimized out>, rotate=0x0, useMediaBox=<optimized out>, crop=<optimized out>, sliceX=sliceX@entry=0xffffffff, sliceY=<optimized out>, sliceW=<optimized out>, sliceH=<optimized out>, printing=<optimized out>, catalog=<optimized out>, abortCheckCbk=<optimized out>, abortCheckCbkData=<optimized out>) at Page.cc:314
+#83838 0x000000000049c46c in Page::display (this=0x20, out=0x7ffff7c62b80 <main_arena>, hDPI=0, vDPI=-nan(0xfffffffffff00), rotate=0x0, useMediaBox=0xf7c62bf0, crop=0xf7c62bf0, printing=<optimized out>, catalog=0x7a1130, abortCheckCbk=0x0, abortCheckCbkData=0x0) at Page.cc:264
+#83839 0x000000000049fca9 in PDFDoc::displayPage (this=0x79ebb0, out=0x7a1ae0, page=<optimized out>, hDPI=<optimized out>, vDPI=<optimized out>, rotate=0x0, useMediaBox=<optimized out>, crop=<optimized out>, printing=<optimized out>, abortCheckCbk=<optimized out>, abortCheckCbkData=<optimized out>) at PDFDoc.cc:317
+#83840 PDFDoc::displayPages (this=0x79ebb0, out=0x7a1ae0, firstPage=<optimized out>, lastPage=<optimized out>, hDPI=<optimized out>, vDPI=<optimized out>, rotate=0x0, useMediaBox=<optimized out>, crop=<optimized out>, printing=<optimized out>, abortCheckCbk=<optimized out>, abortCheckCbkData=<optimized out>) at PDFDoc.cc:330
+#83841 0x00000000004d40d8 in main (argc=<optimized out>, argv=<optimized out>) at pdftotext.cc:237
 
 
-b *0x5555555e25a3
+end:
+_int_malloc         malloc.c:3679
+__GI___libc_malloc  malloc.c:3058
+gmalloc             gmem.cc:97
+copyString          gmem.cc:261
+Lexer::getObj       Object.h:93
+Parser::shift       Parser.cc:226
+Parser::getObj      Parser.cc:111
+Parser::getObj      Parser.cc:85
+XRef::fetch         XRef.cc:823
 
-[#0] 0x5555555e25a3 → FileStream::makeSubStream(this=0x555555691c00, startA=0x92, limitedA=0x0, lengthA=0x0, dictA=0x7fffffffdc20)
+dict.cc:73?
 
+repeating (20k+):
+Object::dictLookup  Object.h:253
+Parser::makeStream  Parser.cc:156
+Parser::getObj      Parser.cc:94
+XRef::fetch         XRef.cc:823
 
+start:
+Page::displaySlice Page.cc:314
+Page::display Page.cc:264
+PDFDoc::displayPage PDFDoc.cc:317
+PDFDoc::displayPages PDFDoc.cc:330
+main pdftotext.cc:237
+
+jesus christ what a recursive mess, looks annoying to fix
+
+oh the fix in 4.02 is to just add a counter and hope it's good enough :') (recursionLimit)
