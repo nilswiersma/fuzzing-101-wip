@@ -1,0 +1,119 @@
+https://github.com/libexif/libexif/archive/refs/tags/libexif-0_6_14-release.tar.gz
+
+apt install autopoint libtool
+(also need gettext libpopt-dev, not sure why?)
+apt install gettext libpopt-dev
+
+./autogen.sh
+./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean
+make -j4
+make install
+
+----------------------------------------------------------------------
+Libraries have been installed in:
+   /home/nils/projects/fuzzing-101-wip/fuzzing_libexif/install_clean/lib
+                                                               
+If you ever happen to want to link against installed libraries
+in a given directory, LIBDIR, you must either use libtool, and
+specify the full pathname of the library, or use the '-LLIBDIR'                                                                                                                                                                                                
+flag during linking and do at least one of the following:                                                                                                                                                                                                      
+   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable                                                                                                                                                                                                  
+     during execution                       
+   - add LIBDIR to the 'LD_RUN_PATH' environment variable
+     during linking
+   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag         
+   - have your system administrator add LIBDIR to '/etc/ld.so.conf'                                                            
+                                                               
+See any operating system documentation about shared libraries for
+more information, such as the ld(1) and ld.so(8) manual pages.
+----------------------------------------------------------------------      
+
+found some sample data: https://github.com/ianare/exif-samples/archive/refs/heads/master.zip
+`make check` builds some test applications
+.libs/test-mnote operates on inputs
+
+
+rebuild with afl
+export LLVM_CONFIG="llvm-config-11"
+CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl"
+make -j4
+make install
+
+----------------------------------------------------------------------
+Libraries have been installed in:
+   /home/nils/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/lib
+
+If you ever happen to want to link against installed libraries
+in a given directory, LIBDIR, you must either use libtool, and
+specify the full pathname of the library, or use the '-LLIBDIR'
+flag during linking and do at least one of the following:
+   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable
+     during execution
+   - add LIBDIR to the 'LD_RUN_PATH' environment variable
+     during linking
+   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag
+   - have your system administrator add LIBDIR to '/etc/ld.so.conf'
+
+See any operating system documentation about shared libraries for
+more information, such as the ld(1) and ld.so(8) manual pages.
+----------------------------------------------------------------------
+
+cd test
+make test-mnote
+
+put the sample images in a flat folder (`find */ -type f -exec bash -c 'file=${1#./}; mv "$file" "${file//\//_}"' _ '{}' \;`)
+
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_libexif/exif-samples-master-flat/ \
+    -o $HOME/projects/fuzzing-101-wip/fuzzing_libexif/out \
+    -s 123 \
+    -- \
+    $HOME/projects/fuzzing-101-wip/fuzzing_libexif/libexif-libexif-0_6_14-release/test/.libs/test-mnote \
+    @@ 
+
+too many cases, some are too big (starting anyway im lazy)
+
+malloc(): unsorted double linked list corrupted             
+                                                               
+Program received signal SIGABRT, Aborted. 
+
+~/projects/fuzzing-101-wip/fuzzing_libexif/libexif-libexif-0_6_14-release/test/.libs/test-mnote ~/projects/fuzzing-101-wip/fuzzing_libexif/out/
+
+#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
+#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
+#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
+#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
+#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
+#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
+#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
+#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
+#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
+#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
+#10 exif_data_new_from_file (path=0x7fffffffe1d4 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000000,sig:11,src:000087,time:4657,execs:2932,op:havoc,rep:16") at exif-data.c:922
+#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+
+#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
+#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
+#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
+#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
+#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
+#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
+#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
+#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
+#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
+#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
+#10 exif_data_new_from_file (path=0x7fffffffe1d5 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000001,sig:11,src:000087,time:4692,execs:2954,op:havoc,rep:2") at exif-data.c:922
+#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+
+#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
+#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
+#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
+#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
+#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
+#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
+#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
+#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
+#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
+#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
+#10 exif_data_new_from_file (path=0x7fffffffe1d4 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000002,sig:11,src:000087,time:4693,execs:2955,op:havoc,rep:16") at exif-data.c:922
+#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+
