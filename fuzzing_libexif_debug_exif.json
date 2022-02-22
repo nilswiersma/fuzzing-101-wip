@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/../install_clean/bin/exif",
+            // "args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000000,sig:11,src:000235+000267,time:73593,execs:38668,op:splice,rep:16"],
+            // "args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000010,sig:11,src:000339+000633,time:949038,execs:715667,op:splice,rep:16"],
+            // "args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000011,sig:11,src:000644+000133,time:1019070,execs:775323,op:splice,rep:2"],
+            // "args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out2/default/crashes/id:000000,sig:11,src:000215+000093,time:76825,execs:74687,op:splice,rep:8"],
+            "args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out2/default/crashes/id:000001,sig:11,src:000396,time:157479,execs:128580,op:havoc,rep:2"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

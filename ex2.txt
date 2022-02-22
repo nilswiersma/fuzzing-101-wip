@@ -1,119 +1,190 @@
 https://github.com/libexif/libexif/archive/refs/tags/libexif-0_6_14-release.tar.gz
 
-apt install autopoint libtool
-(also need gettext libpopt-dev, not sure why?)
-apt install gettext libpopt-dev
+https://github.com/libexif/exif/archive/refs/tags/exif-0_6_15-release.tar.gz
 
-./autogen.sh
-./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean
+cheating with all the installation steps:
+
+wget https://github.com/libexif/libexif/archive/refs/tags/libexif-0_6_14-release.tar.gz
+tar -xzvf libexif-0_6_14-release.tar.gz
+
+cd libexif-libexif-0_6_14-release/
+sudo apt-get install autopoint libtool gettext libpopt-dev
+autoreconf -fvi
+./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean"
+make -j4
+make install
+cd ..
+
+wget https://github.com/libexif/exif/archive/refs/tags/exif-0_6_15-release.tar.gz
+tar -xzvf exif-0_6_15-release.tar.gz
+
+cd exif-exif-0_6_15-release/
+autoreconf -fvi
+./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean" PKG_CONFIG_PATH=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean/lib/pkgconfig
 make -j4
 make install
 
-----------------------------------------------------------------------
-Libraries have been installed in:
-   /home/nils/projects/fuzzing-101-wip/fuzzing_libexif/install_clean/lib
-                                                               
-If you ever happen to want to link against installed libraries
-in a given directory, LIBDIR, you must either use libtool, and
-specify the full pathname of the library, or use the '-LLIBDIR'                                                                                                                                                                                                
-flag during linking and do at least one of the following:                                                                                                                                                                                                      
-   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable                                                                                                                                                                                                  
-     during execution                       
-   - add LIBDIR to the 'LD_RUN_PATH' environment variable
-     during linking
-   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag         
-   - have your system administrator add LIBDIR to '/etc/ld.so.conf'                                                            
-                                                               
-See any operating system documentation about shared libraries for
-more information, such as the ld(1) and ld.so(8) manual pages.
-----------------------------------------------------------------------      
+
 
 found some sample data: https://github.com/ianare/exif-samples/archive/refs/heads/master.zip
-`make check` builds some test applications
-.libs/test-mnote operates on inputs
+put the sample images in a flat folder (`find */ -type f -exec bash -c 'file=${1#./}; mv "$file" "${file//\//_}"' _ '{}' \;`)
 
 
 rebuild with afl
+
+make clean
 export LLVM_CONFIG="llvm-config-11"
-CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl"
+CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl"
 make -j4
 make install
 
-----------------------------------------------------------------------
-Libraries have been installed in:
-   /home/nils/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/lib
+make clean
+export LLVM_CONFIG="llvm-config-11"
+CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl" PKG_CONFIG_PATH=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/lib/pkgconfig
+make -j4
+make install
 
-If you ever happen to want to link against installed libraries
-in a given directory, LIBDIR, you must either use libtool, and
-specify the full pathname of the library, or use the '-LLIBDIR'
-flag during linking and do at least one of the following:
-   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable
-     during execution
-   - add LIBDIR to the 'LD_RUN_PATH' environment variable
-     during linking
-   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag
-   - have your system administrator add LIBDIR to '/etc/ld.so.conf'
-
-See any operating system documentation about shared libraries for
-more information, such as the ld(1) and ld.so(8) manual pages.
-----------------------------------------------------------------------
-
-cd test
-make test-mnote
-
-put the sample images in a flat folder (`find */ -type f -exec bash -c 'file=${1#./}; mv "$file" "${file//\//_}"' _ '{}' \;`)
 
 afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_libexif/exif-samples-master-flat/ \
-    -o $HOME/projects/fuzzing-101-wip/fuzzing_libexif/out \
-    -s 123 \
-    -- \
-    $HOME/projects/fuzzing-101-wip/fuzzing_libexif/libexif-libexif-0_6_14-release/test/.libs/test-mnote \
-    @@ 
+-o $HOME/projects/fuzzing-101-wip/fuzzing_libexif/out \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/bin/exif \
+@@ 
+
 
 too many cases, some are too big (starting anyway im lazy)
 
-malloc(): unsorted double linked list corrupted             
-                                                               
-Program received signal SIGABRT, Aborted. 
+gdb --eval-command=run --eval-command=bt --args install_afl/bin/exif out/default/crashes/id\:000000\,sig\:11\,src\:000235+000267\,time\:73593\,execs\:38668\,op\:splice\,rep\:16
 
-~/projects/fuzzing-101-wip/fuzzing_libexif/libexif-libexif-0_6_14-release/test/.libs/test-mnote ~/projects/fuzzing-101-wip/fuzzing_libexif/out/
+000000,000001,000006
+segfault on exif-utils.c:92
 
-#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
-#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
-#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
-#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
-#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
-#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
-#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
-#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
-#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
-#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
-#10 exif_data_new_from_file (path=0x7fffffffe1d4 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000000,sig:11,src:000087,time:4657,execs:2932,op:havoc,rep:16") at exif-data.c:922
-#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+000002,000004,000005
+segfault on exif-mnote-data-olympus.c:357
 
-#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
-#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
-#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
-#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
-#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
-#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
-#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
-#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
-#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
-#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
-#10 exif_data_new_from_file (path=0x7fffffffe1d5 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000001,sig:11,src:000087,time:4692,execs:2954,op:havoc,rep:2") at exif-data.c:922
-#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+000003
+segfault on exif-utils.c:94
 
-#0  __GI_raise (sig=sig@entry=0x6) at ../sysdeps/unix/sysv/linux/raise.c:50
-#1  0x00007ffff7d97859 in __GI_abort () at abort.c:79
-#2  0x00007ffff7e023ee in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7ffff7f2c285 "%s\n") at ../sysdeps/posix/libc_fatal.c:155
-#3  0x00007ffff7e0a47c in malloc_printerr (str=str@entry=0x7ffff7f2ead8 "malloc(): unsorted double linked list corrupted") at malloc.c:5347
-#4  0x00007ffff7e0d46c in _int_malloc (av=av@entry=0x7ffff7f5db80 <main_arena>, bytes=bytes@entry=0x20) at malloc.c:3744
-#5  0x00007ffff7e10d15 in __libc_calloc (n=<optimized out>, elem_size=<optimized out>) at malloc.c:3428
-#6  0x00007ffff7f8f904 in exif_mem_alloc (mem=0x40b6d0, ds=0x20) at exif-mem.c:79
-#7  exif_content_new_mem (mem=0x40b6d0) at exif-content.c:59
-#8  exif_data_new_mem (mem=<optimized out>) at exif-data.c:127
-#9  0x00007ffff7f95904 in exif_loader_get_data (loader=<optimized out>) at exif-loader.c:385
-#10 exif_data_new_from_file (path=0x7fffffffe1d4 "/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000002,sig:11,src:000087,time:4693,execs:2955,op:havoc,rep:16") at exif-data.c:922
-#11 0x0000000000207663 in main (argc=<optimized out>, argv=0x7fffffffde08) at test-mnote.c:84
+000007,000010,000011
+segfault on exif-data.c:292
 
+000008,000009
+exif-mnote-data-canon.c:224
+
+
+
+# set up debugging in vscode
+- put exif-exif-0_6_15-release/ as the root
+- click run > debug 
+- configure the following in launch.json:
+```
+"program": "${workspaceFolder}/../install_clean/bin/exif",
+"args": ["/home/nils/projects/fuzzing-101-wip/fuzzing_libexif/out/default/crashes/id:000000,sig:11,src:000235+000267,time:73593,execs:38668,op:splice,rep:16"],
+```
+- quick and dirty re-build script:
+```
+#!/bin/bash
+rm -rf install_clean
+
+cd libexif-libexif-0_6_14-release
+make clean
+./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean"
+make -j4
+make install
+cd ..
+
+cd exif-exif-0_6_15-release/
+make clean
+./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean" PKG_CONFIG_PATH=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_clean/lib/pkgconfig
+make -j4
+make install
+```
+
+
+# triaging id:000000
+exif_get_short gets called with offset=0xfffffffe
+offset is read twice from the buffer
+pass exifloader's size and check it against the offset and the get operation:
+```
+offset = exif_get_long (d + 10, data->priv->order);
+exif_log (data->priv->log, EXIF_LOG_CODE_DEBUG, "ExifData", 
+    "IFD 0 at %i.", (int) offset);
+
+/* Parse the actual exif data (usually offset 14 from start) */
+exif_data_load_data_content (data, EXIF_IFD_0, d + 6, ds - 6, offset, 0);
+
+/* IFD 1 offset */
+if (offset + 6 + 2 > ds) {
+  return;
+}
+if (offset >= max_size || ds + 6 + offset >= max_size) {
+  exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA,
+        "ExifData", "Offset beyond data size.");
+  return;
+}
+n = exif_get_short (d + 6 + offset, data->priv->order);
+if (offset + 6 + 2 + 12 * n + 4 > ds) {
+  return;
+}
+if (offset >= max_size || ds + 6 + offset + 2 + 12 * n >= max_size) {
+  exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA,
+        "ExifData", "Offset beyond data size.");
+  return;
+}
+
+```
+
+also fixes all but 000010, 000011
+
+# triaging id:000010
+thumbnail_offset=0xfffffff4
+thumbnail_length=0x100
+
+exif_data_load_data_thumbnail (data, d,
+              ds, thumbnail_offset,
+              thumbnail_length);
+
+add another offset max_size check in same function (not good enough for all cases)
+```
+if (offset >= max_size) { // not good enough for all cases, but enough for some
+  exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA,
+        "ExifData", "Offset beyond data size.");
+  return;
+}
+/* Parse the actual exif data (usually offset 14 from start) */
+exif_data_load_data_content (data, EXIF_IFD_0, d + 6, ds - 6, offset, 0);
+```
+and a hacky specific fixes
+
+# triaging id:000011
+
+add a slightly better ugly fix for id:000010, now it also covers id:000011
+
+
+
+
+# Start another campaign
+
+```
+cd 
+make clean
+export LLVM_CONFIG="llvm-config-11"
+CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl"
+make -j4
+make install
+
+make clean
+CC=$HOME/repos/AFLplusplus/afl-clang-lto CXX=$HOME/repos/AFLplusplus/afl-clang-lto++ ./configure --enable-shared=no --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl" PKG_CONFIG_PATH=$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/lib/pkgconfig
+make -j4
+make install
+```
+
+```
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_libexif/exif-samples-master-flat/ \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_libexif/out2 \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_libexif/install_afl/bin/exif \
+@@ 
+```

@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "fuzzing_libexif/exif-exif-0_6_15-release"
+		},
+		{
+			"path": "fuzzing_libexif/libexif-libexif-0_6_14-release"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"exif-log.h": "c"
+		}
+	}
+}
