@@ -1,0 +1,147 @@
+tcpdump 4.9.1: https://github.com/the-tcpdump-group/tcpdump/archive/refs/tags/tcpdump-4.9.1.tar.gz
+
+install -dbg and -dev for libpcap0.8
+apt install libpcap0.8-dev libpcap0.8-dbg
+
+./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_clean
+make
+make install
+
+run tcpdump and generate some data:
+sudo ./install_clean/sbin/tcpdump -w some-traffic.bin
+
+replay data:
+./install_clean/sbin/tcpdump -r some-traffic.bin
+
+try regular fuzzing:
+make clean
+CC=$HOME/repos/AFLplusplus/afl-clang-lto ./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl
+make -j4
+make install
+
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/out \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl/sbin/tcpdump -r \
+@@ 
+
+not much after a few tens of minutes
+
+to use with ASAN: https://github.com/AFLplusplus/AFLplusplus/blob/143c9d175e9357ba548413ee7dcee6a8de23f733/docs/fuzzing_in_depth.md
+https://afl-1.readthedocs.io/en/latest/notes_for_asan.html warnings are relevant?
+
+build with asan enabled:
+export AFL_USE_ASAN=1
+make clean
+CC=$HOME/repos/AFLplusplus/afl-clang-lto ./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan
+make -j4
+make install
+
+
+minimize inputs: 
+afl-cmin -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in_unique \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl/sbin/tcpdump -r \
+@@ 
+
+gives the same outputs
+
+
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/out2 \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan/sbin/tcpdump -r \
+@@ 
+
+500k execs, no results
+
+==================
+
+checking solutions, 
+- have 8m execs, 
+- also instrumentation in libpcap, 
+- uses inputs from tcpdump/tests/ 
+- use tcpdump 4.9.2 instead of 4.9.1
+- sets -m none for more virtual memory space
+- uses -nn and -ee flags in tcpdump?
+- use export LLVM_CONFIG="llvm-config-11"
+
+# better start corpus
+
+```
+$ afl-cmin -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test -o $HOME/projects/fuzzing-101-wip/fuzz
+ing_tcpdump/in_tcpdump_test_unique -- $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl/sbin/tcpdump -r @@
+ 
+corpus minimization tool for afl++ (awk version)
+
+[*] Testing the target binary...
+[+] OK, 49 tuples recorded.
+[*] Obtaining traces for 232 input files in '/home/nils/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test'.
+    Processing 232 files (forkserver mode)...
+[*] Processing traces for input files in '/home/nils/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test'.
+    Processing file 232/232
+    Processing tuple 2011/2011 with count 222...
+[+] Found 2011 unique tuples across 232 files.
+[+] Narrowed down to 164 files, saved in '/home/nils/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test_unique'.
+```
+
+```
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test_unique \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/out3 \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan/sbin/tcpdump -r \
+@@ 
+```
+
+remove some testcases manually because 
+```
+[-] The program took more than 1000 ms to process one of the initial test cases.
+    This is bad news; raising the limit with the -t option is possible, but
+    will probably make the fuzzing process extremely slow.
+```
+
+1.6M, no results
+
+# also compile libpcap for instrumentation
+
+grabbing 1.9.1, which comes with ubuntu20.04
+https://github.com/the-tcpdump-group/libpcap/archive/refs/tags/libpcap-1.9.1.tar.gz
+
+```
+cd libpcap
+export LLVM_CONFIG="llvm-config-11"
+export AFL_USE_ASAN=1
+CC="$HOME/repos/AFLplusplus/afl-clang-lto" ./configure --prefix="$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan2" --enable-shared=no
+make -j4
+make install
+
+cd ..
+
+mv libpcap-libpcap-1.9.1/ libpcap-1.9.1/
+
+
+cd tcpdump
+make clean
+export LLVM_CONFIG="llvm-config-11"
+export AFL_USE_ASAN=1
+CC=$HOME/repos/AFLplusplus/afl-clang-lto ./configure --prefix=$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan2
+make -j4
+make install
+```
+
+```
+```
+afl-fuzz -i $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/in_tcpdump_test_unique \
+-o $HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/out4 \
+-s 123 \
+-- \
+$HOME/projects/fuzzing-101-wip/fuzzing_tcpdump/install_afl_asan2/sbin/tcpdump -r \
+@@ 
+```
+
+1.2M results, no crashes
+try tcpdump4.9.2?
